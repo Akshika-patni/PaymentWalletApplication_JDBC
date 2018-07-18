@@ -18,7 +18,8 @@ import com.capgemini.paymentapp.exception.InvalidInputExp;
 import com.capgemini.paymentapp.service.PaymentAppService;
 import com.capgemini.paymentapp.service.PaymentAppValidate;
 
-public class Client {public static void main(String args[]) 
+public class Client {
+	public static void main(String args[]) 
 {
 	int choice = 1;
 
