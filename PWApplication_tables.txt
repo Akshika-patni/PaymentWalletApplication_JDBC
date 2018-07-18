@@ -1,0 +1,9 @@
+CREATE DATABASE PWA_152609;
+USE PWA_152609;
+
+
+
+CREATE TABLE CUSTOMER(cname varchar(30) not null,adharNumber bigint primary key,address varchar(30),phoneNumber int,gender varchar(7),age int, user_ID varchar(10) unique ,password varchar(8));
+
+
+CREATE TABLE WALLET(accountNumber bigint,aod Date,initialBalance double, adharNo bigint, foreign key(adharNo)references customer(adharNumber));
