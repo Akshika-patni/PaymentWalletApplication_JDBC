@@ -224,15 +224,8 @@ public class PaymentAppdao implements IPaymentAppDao {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-	}
+	
 
-	public void logout() {
-		try {
-			System.out.println("Logged out of server");
-			con.close();
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
 	}
 
 }
