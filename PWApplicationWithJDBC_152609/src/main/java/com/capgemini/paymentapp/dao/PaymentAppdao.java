@@ -1,207 +1,238 @@
 package com.capgemini.paymentapp.dao;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 
 import com.capgemini.paymentapp.bean.Customer;
 import com.capgemini.paymentapp.util.DBUtil;
-import com.mysql.jdbc.Statement;
 
 public class PaymentAppdao implements IPaymentAppDao {
 	Connection con;
-	static ResultSet rs, rs2;
-	static double d;
+	static double d, t;
+	public static ResultSet rs1;
+	public static ResultSet rs2, rs3, rs4;
 
 	public boolean createAccount(Customer customer) {
 		int n1 = 0;
 		int n2 = 0;
 		try {
-			System.out.println("1");
 			con = DBUtil.getConnection();
-			System.out.println("2");
 			String insertquery1 = "insert into customer values( ?,?,?,?,?,?,?,?)";
-			System.out.println("3");
+
 			java.sql.PreparedStatement pstmt1 = con.prepareStatement(insertquery1);
 			pstmt1.setString(1, customer.getCustomerName());
 			pstmt1.setLong(2, customer.getAdharNumber());
 			pstmt1.setString(3, customer.getAddress());
-			System.out.println("4");
+
 			pstmt1.setString(4, customer.getPhoneNumber());
 			pstmt1.setString(5, customer.getGender());
 			pstmt1.setInt(6, customer.getAge());
 			pstmt1.setString(7, customer.getUser_ID());
 			pstmt1.setString(8, customer.getPassword());
-			System.out.println("5");
+
 			String insertquery2 = "insert into wallet values( ?,curdate(),?,?)";
-			System.out.println("6");
 			java.sql.PreparedStatement pstmt2 = con.prepareStatement(insertquery2);
 			pstmt2.setLong(1, customer.getWallet().getAccountNumber());
-			System.out.println("7");
 			pstmt2.setDouble(2, customer.getWallet().getInitalBalance());
 			pstmt2.setLong(3, customer.getWallet().getAdharNumber());
-			System.out.println("8");
 			n1 = pstmt1.executeUpdate();
-			System.out.println("9");
 			n2 = pstmt2.executeUpdate();
-
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
+		} finally {
+			try {
+				System.out.println("connection closed");
+				con.close();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		System.out.println("10");
+
 		if (n1 == 1 && n2 == 1) {
-			System.out.println("11");
+
 			return true;
 		} else
 			return false;
-
 	}
 
 	public double showBalance() {
 
 		try {
-			
 			if (rs2.first()) {
-				double d = rs2.getDouble(3);
+				d = rs2.getDouble(3);
 				return d;
-
 			}
-
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 		return d;
 	}
 
 	public boolean deposite(double amount) {
-		double d;
-		int n = 0;
 		try {
-			java.sql.Statement stmt1 = con.createStatement();
 			if (rs2.first()) {
 				d = rs2.getDouble(3) + amount;
-				String update = "update wallet set initialBalance=" + d;
-				n = stmt1.executeUpdate(update);
-				String selectquery2 = "select * from wallet where adharNo=" + rs.getInt(2);
-				rs2 = stmt1.executeQuery(selectquery2);
+				String updatequery = "update wallet set initialBalance='" + d + "' where adharNo='" + rs2.getDouble(4)
+						+ "'";
+				String select = "select * from wallet where adharNo='" + rs2.getDouble(4) + "'";
+				java.sql.PreparedStatement stmt = con.prepareStatement(updatequery);
+				long tid = (long) (Math.random() * 1234 + 1234);
+				LocalDateTime date=LocalDateTime.now();
+				String s = "Deposited " + Double.toString(amount) + " with transaction id " + Long.toString(tid)+" on "+date.toString();
+				String insrt = "insert into transaction values('" + rs2.getDouble(4) + "','" + s + "')";
+				int r = stmt.executeUpdate();
+				rs2 = stmt.executeQuery(select);
+				if (r == 1) {
+					java.sql.PreparedStatement pstmt = con.prepareStatement(insrt);
+					pstmt.executeUpdate();
+					return true;
+				}
 
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
-
 		}
-		if (n != 0)
-			return true;
-		else
-			return false;
 
+		return false;
 	}
 
 	public boolean logIn(String user_ID, String password) {
-
 		try {
 			con = DBUtil.getConnection();
 			java.sql.Statement stmt1 = con.createStatement();
-			System.out.println("12");
 			String selectquery1 = "select * from customer where user_ID='" + user_ID + "' and password='" + password
 					+ "'";
-			rs = stmt1.executeQuery(selectquery1);
-			if (rs.first()) {
-				int d = rs.getInt(2);
+			rs1 = stmt1.executeQuery(selectquery1);
+			if (rs1.first()) {
+				int k = rs1.getInt(2);
 				java.sql.Statement stmt2 = con.createStatement();
-				String selectquery2 = "select * from wallet where adharNo=" + d;
+				String selectquery2 = "select * from wallet where adharNo='" + k + "'";
 				rs2 = stmt2.executeQuery(selectquery2);
 				return true;
 			}
 
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
 		}
-		return false;
 
+		return false;
 	}
 
 	public boolean withdraw(double amount) {
-		// TODO Auto-generated method stub
-		double d;
-		int n = 0;
 		try {
-			java.sql.Statement stmt1 = con.createStatement();
 			if (rs2.first()) {
+
 				d = rs2.getDouble(3) - amount;
-				String update = "update wallet set initialBalance=" + d;
-				n = stmt1.executeUpdate(update);
-				String selectquery2 = "select * from wallet where adharNo=" + rs.getInt(2);
-				rs2 = stmt1.executeQuery(selectquery2);
+				long tid = (long) (Math.random() * 1234 + 1234);
+				LocalDateTime date=LocalDateTime.now();
+				String s = "Withdrawn " + Double.toString(amount) + " with transaction id " + Long.toString(tid)+" on "+date.toString();
+
+				String withdraw = "insert into transaction values('" + rs2.getDouble(4) + "','" + s + "')";
+
+				String updatequery = "update wallet set initialBalance='" + d + "' where adharNo='" + rs2.getDouble(4)
+						+ "'";
+
+				String select = "select * from wallet where adharNo='" + rs2.getDouble(4) + "'";
+				java.sql.PreparedStatement stmt = con.prepareStatement(updatequery);
+				int r = stmt.executeUpdate();
+				rs2 = stmt.executeQuery(select);
+				if (r == 1) {
+					java.sql.PreparedStatement pstmt = con.prepareStatement(withdraw);
+					pstmt.executeUpdate();
+					return true;
+				}
 
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
-
 		}
-		if (n != 0)
-			return true;
-		else
-			return false;
 
+		return false;
 	}
 
 	public boolean fundTransfer(long receiverAccountNumber, double amount) {
-		// TODO Auto-generated method stub
-		int n1 = 0,n2=0;
+		int r = 0, r1 = 0;
 		try {
-		java.sql.Statement stmt = con.createStatement();
-		String selectquery3 = "select * from wallet where accountNumber=" + receiverAccountNumber;
-		ResultSet rt = stmt.executeQuery(selectquery3);
-			if (rs2.first()) 
-			{d = rs2.getDouble(3) - amount;
-			String update = "update wallet set initialBalance=" + d;
-			n1 = stmt.executeUpdate(update);
-			String selectquery2 = "select * from wallet where adharNo=" + rs.getInt(2);
-			rs2 = stmt.executeQuery(selectquery2);
 
+			String sel = "select * from wallet where accountNumber=" + receiverAccountNumber;
+			java.sql.PreparedStatement smt = con.prepareStatement(sel);
+			rs3 = smt.executeQuery();
 			
+			if (rs3.first()) {
+				d = rs3.getDouble(3) + amount;
+				String updatequery = "update wallet set initialBalance=" + d + " where adharNo=" + rs3.getDouble(4);
+				java.sql.PreparedStatement stmt = con.prepareStatement(updatequery);
+				r1 = stmt.executeUpdate();
+				if(r1==1) {
+				long tid = (long) (Math.random() * 1234 + 1234);
+				LocalDateTime date=LocalDateTime.now();
+				String s = "Recieved " + Double.toString(amount) +" with transaction id " + Long.toString(tid)+" on "+date.toString();
+				String recieve = "insert into transaction values('" + rs3.getDouble(4) + "','" + s + "')";
+				java.sql.PreparedStatement pstmt = con.prepareStatement(recieve);
+				pstmt.executeUpdate();
+				
+				if (rs2.first()) {
+					 double d1 = rs2.getDouble(3) - amount;
+					String updatequery1 = "update wallet set initialBalance=" + d1 + " where adharNo=" + rs2.getDouble(4);
+					java.sql.PreparedStatement stmt1 = con.prepareStatement(updatequery1);
+					r = stmt1.executeUpdate();
+					if(r==1) {
+					long tid1 = (long) (Math.random() * 1234 + 1234);
+					String s1 = "Transfered " + Double.toString(amount) + " with transaction id " + Long.toString(tid)+" on "+date.toString();
+					String transfer = "insert into transaction values('" + rs2.getDouble(4) + "','" + s1 + "')";
+					String select = "select * from wallet where adharNo=" + rs2.getDouble(4);
+					rs2 = stmt.executeQuery(select);
+					java.sql.PreparedStatement pstmt1 = con.prepareStatement(transfer);
+					pstmt1.executeUpdate();
+					}
+
+				}
+				}
 			}
-			
-		if(rt.first())
-		{
-		java.sql.Statement stmt1 = con.createStatement();
-		d = rt.getDouble(3) + amount;
-		String update2 = "update wallet set initialBalance="+d+" where adharNo="+rt.getInt(4);
-		n2 = stmt1.executeUpdate(update2);
-		
-	
-		}
-			
+			if (r == 1 && r1 == 1) {
+				
+				return true;
+			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		if(n1!=0 && n2!=0)
-		{
-			return true;
-		}
-			return false;
-		
-		
-	
+		return false;
 	}
 
 	public void printTranscation() {
-		// TODO Auto-generated method stub
+		try {
+			if (rs2.first()) {
+				d = rs2.getDouble(4);
+				String select = "select * from transaction where adharNo='" + d + "'";
+				java.sql.PreparedStatement stmt = con.prepareStatement(select);
+				rs4 = stmt.executeQuery();
+				while (rs4.next()) {
+					System.out.println(rs4.getString(2));
+				}
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 
+	public void logout() {
+		try {
+			System.out.println("Logged out of server");
+			con.close();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 	}
 
 }
